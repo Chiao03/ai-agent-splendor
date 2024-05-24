@@ -21,10 +21,7 @@ class Node:
         self.game_rule = SplendorGameRule(num_of_agent=NUM_AGENT)
         self.id = id
     def fully_expanded(self):
-        for child in self.children:
-            if child.visits == 0:
-                return False
-        return True
+        return all(child.visits != 0 for child in self.children)
     def get_unexpanded_move(self):
         for child in self.children:
             if child.visits == 0:
@@ -42,14 +39,14 @@ class Node:
         else:
             return max(self.children, key = lambda c: c.score/c.visits + 0.5 * math.sqrt(math.log(self.visits) / c.visits))
     def expand(self):
-        action = random.choice(self.game_rule.getLegalActions(self.state, self.id))
-        next_state = self.game_rule.generateSuccessor(self.state, action, self.id)
-        child = Node(next_state, action, self, self.id)
-        self.children.append(child)
-        return child
-        # actions = self.game_rule.getLegalActions(self.state, self.id)
-        # for action in actions:
-        #     self.children.append(Node(self.game_rule.generateSuccessor(self.state, action, self.id), action, self, self.id)
+        actions = self.game_rule.getLegalActions(self.state, self.id)
+        if actions:
+            action = random.choice(actions)
+            next_state = self.game_rule.generateSuccessor(self.state, action, self.id)
+            child = Node(next_state, action, self, self.id)
+            self.children.append(child)
+            return child
+        return None
     def update(self, result):
         self.visits += 1
         self.score += result
@@ -70,19 +67,16 @@ class MCTS:
         return best_child.action if best_child else None
     def select(self, node):
         while not node.fully_expanded():
-            if not node.children:
-                return node.expand()
-            node = node.select_child()
+            node = node.expand() if not node.children else node.select_child()
         return node
     #naive move 
     def simulate(self, node, startTime):
         state = deepcopy(node.state)
-        while time.time() - startTime < MAX_TIME:
-            if self.game_rule.calScore(state, self.id) < 15:
-                actions = self.game_rule.getLegalActions(state, node.id)
-                if actions: 
-                    action = actions[0] 
-                    state = self.game_rule.generateSuccessor(state, action, self.id)
+        while time.time() - startTime < MAX_TIME and self.game_rule.calScore(state, self.id) < 15:
+            actions = self.game_rule.getLegalActions(state, node.id)
+            if actions: 
+                action = random.choice(actions)
+                state = self.game_rule.generateSuccessor(state, action, self.id)
         return self.game_rule.calScore(state, self.id)
     #heuristic
     # def simulate(self, node, startTime):
@@ -163,14 +157,11 @@ class myAgent(Agent):
         self.start_time = time.time()
         self.round += 1
         best_action = self.splendor_heuristic(actions, game_state)
+
         while time.time() - self.start_time < MAX_TIME:
             mcts = MCTS(game_state, self.id)
-            best_action = mcts.search(1, self.start_time)
-        if best_action:   
-            if (best_action not in actions):
-                action =  self.splendor_heuristic(actions, game_state)
-            else:
-                action = best_action
-        else:
-            action = self.splendor_heuristic(actions, game_state)
-        return action
+            potential_best_action = mcts.search(1, self.start_time)
+            if potential_best_action in actions:
+                best_action = potential_best_action
+
+        return best_action if best_action in actions else self.splendor_heuristic(actions, game_state)
