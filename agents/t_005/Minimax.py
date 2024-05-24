@@ -1,14 +1,12 @@
-from template import Agent
+import random
 import time
 from copy import deepcopy
 
-# from general_game_runner import *
 from Splendor.splendor_model import *
-from collections import deque
-import random
+from template import Agent
 
 NUM_AGENT = 2
-MAX_TIME = 0.95 # in case timeout, set a time limit
+MAX_TIME = 0.95  # in case timeout, set a time limit
 
 
 class myAgent(Agent):
@@ -50,12 +48,6 @@ class myAgent(Agent):
                 best_actions.append(action)
 
         best_action = random.choice(best_actions)
-
-        # print("minimaxxed: ", self.count)
-        # print("best_action", best_action)
-        # print("best_score", best_score)
-        # print("num actions", len(actions))
-        print("depth", depth)
 
         # return random choice of best_actions
         return best_action
@@ -102,9 +94,5 @@ class myAgent(Agent):
             return min_eval
 
     def evaluate_state(self, state):
-        # opponent = 1 - self.id
         self_score = self.game_rule.calScore(state, self.id)
-        # opponent_score = self.game_rule.calScore(state, opponent)
-        # assert self_score >= 0 and opponent_score >= 0
         return self_score
-        # return self_score - opponent_score
