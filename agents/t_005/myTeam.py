@@ -1,4 +1,4 @@
-from template import Agent
+from template import Agent 
 import random
 import time 
 import json
